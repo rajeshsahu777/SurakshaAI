@@ -1,0 +1,38 @@
+{
+  "defaults": {
+    "project": 1,
+    "env": 1
+  },
+  "actives": {
+    "project": 1,
+    "env": 1
+  },
+  "projects": [
+    {
+      "idx": 1,
+      "id": "52019000000013049",
+      "name": "SurakshaAI",
+      "domain": {
+        "id": "50043593362",
+        "name": "surakshaai-60076348290.development"
+      },
+      "timezone": "Asia/Kolkata",
+      "env": [
+        {
+          "idx": 1,
+          "id": "60076348290",
+          "name": "Development",
+          "type": 3,
+          "env_status": "Active",
+          "project_details": {
+            "project_name": "SurakshaAI",
+            "id": "52019000000013049",
+            "project_type": "Live"
+          },
+          "is_default": true,
+          "action_required": false
+        }
+      ]
+    }
+  ]
+}
