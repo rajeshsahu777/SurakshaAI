@@ -67,8 +67,8 @@ class SurakshaAIDataProcessor:
                 'pattern': '10_Property_stolen_and_recovered',
                 'key_cols': ['Area_Name', 'Year'],
                 'metrics': {
-                    'property_stolen_value': 'Property_Stolen_Value',
-                    'property_recovered_value': 'Property_Recovered_Value',
+                    'property_stolen_value': 'Value_of_Property_Stolen',
+                    'property_recovered_value': 'Value_of_Property_Recovered',
                     'recovery_rate': 'Recovery_Rate'
                 }
             },
@@ -87,7 +87,7 @@ class SurakshaAIDataProcessor:
                 'pattern': '30_Auto_theft',
                 'key_cols': ['Area_Name', 'Year'],
                 'metrics': {
-                    'auto_theft_cases': 'Auto_Theft_Cases',
+                    'auto_theft_cases': 'Auto_Theft_Stolen',
                     'auto_theft_stolen': 'Auto_Theft_Stolen',
                     'auto_theft_recovered': 'Auto_Theft_Recovered'
                 }
@@ -246,9 +246,12 @@ class SurakshaAIDataProcessor:
                 # Clean column names
                 clean_row = {}
                 for k, v in row.items():
-                    clean_key = k.strip().replace('\ufeff', '').replace('\xef\xbb\xbf', '')
+                    if k is None:
+                        continue
+
+                    clean_key = str(k).strip().replace('\ufeff', '').replace('\xef\xbb\xbf', '')                    
                     clean_row[clean_key] = v
-                
+                                    
                 # Ensure key columns exist
                 if not all(k in clean_row for k in key_cols):
                     continue
@@ -371,6 +374,16 @@ class SurakshaAIDataProcessor:
             m['rape_victims'] = r.get('Victims_of_Rape_Total', 0) or 0
         else:
             m['rape_victims'] = 0
+
+        if 'police_housing' in year_data:
+            ph = year_data['police_housing']
+            m['housing_available'] = ph.get('PH_Hous', 0) or 0
+            m['housing_occupied'] = ph.get('PH_Hous_PH', 0) or 0
+            m['sanctioned_strength'] = ph.get('PH_Sanctioned_Strength', 0) or 0
+        else:
+            m['housing_available'] = 0
+            m['housing_occupied'] = 0
+            m['sanctioned_strength'] = 0
         
         # From murder
         if 'murder' in year_data:
@@ -382,7 +395,8 @@ class SurakshaAIDataProcessor:
         # From auto theft
         if 'auto_theft' in year_data:
             at = year_data['auto_theft']
-            m['auto_theft_cases'] = at.get('Auto_Theft_Cases', 0) or 0
+            # FIXED: Your CSV column is Auto_Theft_Stolen, not Auto_Theft_Cases
+            m['auto_theft_cases'] = at.get('Auto_Theft_Stolen', 0) or 0
         else:
             m['auto_theft_cases'] = 0
         
@@ -410,6 +424,17 @@ class SurakshaAIDataProcessor:
             m['crimes_women_total'] = 0
             m['women_convicted'] = 0
             m['women_pending'] = 0
+
+        if 'arrests_women' in year_data:
+            aw = year_data['arrests_women']
+
+            m['women_arrested'] = aw.get('Persons_Arrested', 0) or 0
+            m['women_convicted_persons'] = aw.get('Persons_Convicted', 0) or 0
+            m['women_chargesheeted'] = aw.get('Persons_Chargesheeted', 0) or 0
+        else:
+            m['women_arrested'] = 0
+            m['women_convicted_persons'] = 0
+            m['women_chargesheeted'] = 0
 
         # From HR violations
         if 'hr_violations' in year_data:
@@ -442,16 +467,29 @@ class SurakshaAIDataProcessor:
         
         # D2: Violent Crime Severity (20%)
         # Murder + Rape + Kidnapping + Dowry deaths
-        d2 = min(20, (m['murder_victims'] + m['rape_victims'] + m['kidnapping_cases'] + m['dowry_deaths']) / 200)
-        
+        ##d2 = min(20, (m['murder_victims'] + m['rape_victims'] + m['kidnapping_cases'] + m['dowry_deaths']) / 200)
+        d2=0
         # D3: Property & Economic Crime (15%)
         # Auto theft + Fraud
         d3 = min(15, (m['auto_theft_cases'] + m['fraud_cases']) / 300)
         
         # D4: Police Accountability (15%)
         # Disciplinary + HR violations + Custodial deaths
-        d4 = min(15, (m['disciplinary'] + m['dismissals'] * 3 + m['hr_violations'] + m['custodial_deaths'] * 5) / 300)
-        
+        housing_gap = max(
+            0,
+            m['sanctioned_strength'] - m['housing_available']
+        )
+
+        d4 = min(
+            15,
+            (
+                m['disciplinary']
+                + m['dismissals'] * 3
+                + m['hr_violations']
+                + m['custodial_deaths'] * 5
+                + housing_gap / 100
+            ) / 300
+        )        
         # D5: Judicial Efficiency (15%)
         # Convictions - but also penalize long trial periods
         trial_penalty = min(10, m['avg_trial_months'] / 12) if m['avg_trial_months'] > 24 else 0
@@ -460,8 +498,7 @@ class SurakshaAIDataProcessor:
         
         # D6: System Backlog & Women's Safety (15%)
         # Pending trials + Crimes against women
-        d6 = min(15, (m['pending_trials'] + m['crimes_women_total'] * 2) / 500)
-        
+        d6 = min(15,(m['pending_trials']+ m['crimes_women_total']+ m['women_arrested']- m['women_convicted_persons']) / 500)        
         total_score = round(d1 + d2 + d3 + d4 + d5 + d6, 2)
         
         # Risk level
@@ -582,10 +619,12 @@ class SurakshaAIDataProcessor:
             'subtypes': ['Murder', 'Rape', 'Kidnapping']
         })
         
-        # Property crimes
+        # Property crimes - FIXED for your actual CSV columns
         property_total = 0
         if 'auto_theft' in year_data:
-            property_total += year_data['auto_theft'].get('Auto_Theft_Cases', 0) or 0
+            # Your CSV has: Auto_Theft_Coordinated/Traced, Auto_Theft_Recovered, Auto_Theft_Stolen
+            # No "Auto_Theft_Cases" column exists, so use Auto_Theft_Stolen as the case count
+            property_total += year_data['auto_theft'].get('Auto_Theft_Stolen', 0) or 0
         if 'fraud' in year_data:
             property_total += year_data['fraud'].get('Fraud_Cases', 0) or 0
         
@@ -596,7 +635,7 @@ class SurakshaAIDataProcessor:
         })
         
         # Crimes against women
-        women_total = 0
+        women_total =0
         if 'crimes_women' in year_data:
             women_total += year_data['crimes_women'].get('Cases_Crime_Against_Women_Total', 0) or 0
         
