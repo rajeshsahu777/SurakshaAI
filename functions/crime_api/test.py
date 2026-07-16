@@ -96,9 +96,13 @@ class SurakshaCLIReport:
         'auto_theft_recovered': ['Auto_Theft_Recovered', 'Auto Theft Recovered', 'Recovered'],
 
         # 6. Serious Fraud
-        'fraud_cases': ['Fraud_Cases', 'Fraud Cases', 'Cases'],
-        'fraud_amount': ['Fraud_Amount', 'Fraud Amount', 'Amount', 'Fraud_Amt'],
-
+        'fraud_cases': [
+            'Loss_of_Property_1_10_Crores',
+            'Loss_of_Property_10_25_Crores',
+            'Loss_of_Property_25_50_Crores',
+            'Loss_of_Property_50_100_Crores',
+            'Loss_of_Property_Above_100_Crores'
+        ],
         # 7. Violent Crime Trials
         'convictions_violent': ['Convictions_in_Violent_Crimes', 'Convictions in Violent Crimes', 'Convictions',
                                 'Violent_Crime_Convictions', 'Violent Crime Convictions'],
@@ -106,10 +110,17 @@ class SurakshaCLIReport:
                                'Violent_Crime_Acquittals', 'Violent Crime Acquittals'],
 
         # 8. Trial Periods
-        'pending_trials': ['Pending_Trial_Cases', 'Pending Trial Cases', 'Pending_Cases', 'Pending Cases',
-                           'Pending_Trial', 'Pending Trial'],
-        'avg_trial_months': ['Average_Period_of_Trial_Months', 'Average Period of Trial Months',
-                             'Avg_Trial_Months', 'Avg Trial Months', 'Average_Trial_Period'],
+        'trial_confession': [
+            'Trial_of_Violent_Crimes_by_Courts_By_Confession'
+        ],
+
+        'trial_regular': [
+            'Trial_of_Violent_Crimes_by_Courts_By_trial'
+        ],
+
+        'trial_total': [
+            'Trial_of_Violent_Crimes_by_Courts_Total'
+        ],
 
         # 9. Human Rights
         'hr_violations_total': ['Human_Rights_Violations_Total', 'Human Rights Violations Total',
@@ -357,10 +368,26 @@ class SurakshaCLIReport:
         lines.append(self._separator())
         lines.append("7. Violent Crime Trials")
         lines.append(self._separator())
-        convictions = self._sum_metric('trials', state_name, year, 'convictions_violent')
-        acquittals = self._sum_metric('trials', state_name, year, 'acquittals_violent')
-        lines.append(self._format_kv("Convictions", f"{convictions:,}"))
-        lines.append(self._format_kv("Acquittals", f"{acquittals:,}"))
+
+        by_confession = self._sum_metric('trials', state_name, year, 'trial_confession')
+
+        by_trial = self._sum_metric(
+            'trials',
+            state_name,
+            year,
+            'trial_regular'
+        )
+
+        total_trials = self._sum_metric(
+            'trials',
+            state_name,
+            year,
+            'trial_total'
+        )
+
+        lines.append(self._format_kv("By Confession", f"{by_confession:,}"))
+        lines.append(self._format_kv("By Trial", f"{by_trial:,}"))
+        lines.append(self._format_kv("Total Trials", f"{total_trials:,}"))
         lines.append("")
 
         # 8. Trial Period

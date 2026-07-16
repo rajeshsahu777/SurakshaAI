@@ -106,18 +106,21 @@ class SurakshaAIDataProcessor:
                 'pattern': '31_Serious_fraud',
                 'key_cols': ['Area_Name', 'Year'],
                 'metrics': {
-                    'fraud_cases': 'Fraud_Cases',
-                    'fraud_amount': 'Fraud_Amount'
+                    'loss_1_10': 'Loss_of_Property_1_10_Crores',
+                    'loss_10_25': 'Loss_of_Property_10_25_Crores',
+                    'loss_25_50': 'Loss_of_Property_25_50_Crores',
+                    'loss_50_100': 'Loss_of_Property_50_100_Crores',
+                    'loss_above_100': 'Loss_of_Property_Above_100_Crores'
                 }
             },
             # File 7: Violent Crime Trials
             'trials': {
                 'pattern': '28_Trial_of_violent_crimes_by_courts',
-                'key_cols': ['Area_Name', 'Year'],
+                'key_cols': ['Area_Name','Year'],
                 'metrics': {
-                    'trials_violent_crimes': 'Trials_of_Violent_Crimes',
-                    'convictions_violent': 'Convictions_in_Violent_Crimes',
-                    'acquittals_violent': 'Acquittals_in_Violent_Crimes'
+                    'trial_confession': 'Trial_of_Violent_Crimes_by_Courts_By_Confession',
+                    'trial_regular': 'Trial_of_Violent_Crimes_by_Courts_By_trial',
+                    'trial_total': 'Trial_of_Violent_Crimes_by_Courts_Total'
                 }
             },
             # File 8: Trial Periods
@@ -367,8 +370,7 @@ class SurakshaAIDataProcessor:
             m['cases_registered'] = c.get('CPA_-_Cases_Registered', 0) or 0
             m['disciplinary'] = c.get('CPC_-_Police_Personnel_Disciplinary_Action_Initiated', 0) or 0
             m['dismissals'] = c.get('CPC_-_Police_Personnel_Dismissal/Removal_from_Service', 0) or 0
-            m['convictions'] = c.get('CPB_-_Police_Personnel_Convicted', 0) or 0
-            m['trials'] = c.get('CPB_-_Police_Personnel_Trial_Completed', 0) or 0
+            m['violent_trial_total'] = (t.get('Trial_of_Violent_Crimes_by_Courts_Total',0) or 0)
             m['false_cases'] = c.get('CPA_-_Complaints/Cases_Declared_False/Unsubstantiated', 0) or 0
             m['dept_enquiries'] = c.get('CPA_-_No_of_Departmental_Enquiries', 0) or 0
             m['mag_enquiries'] = c.get('CPA_-_No_of_Magisterial_Enquiries', 0) or 0
@@ -418,7 +420,13 @@ class SurakshaAIDataProcessor:
         # From fraud
         if 'fraud' in year_data:
             f = year_data['fraud']
-            m['fraud_cases'] = f.get('Fraud_Cases', 0) or 0
+            m['fraud_cases'] = (
+                (f.get('Loss_of_Property_1_10_Crores',0) or 0) +
+                (f.get('Loss_of_Property_10_25_Crores',0) or 0) +
+                (f.get('Loss_of_Property_25_50_Crores',0) or 0) +
+                (f.get('Loss_of_Property_50_100_Crores',0) or 0) +
+                (f.get('Loss_of_Property_Above_100_Crores',0) or 0)
+            )
         else:
             m['fraud_cases'] = 0
         
