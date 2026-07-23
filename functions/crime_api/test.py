@@ -96,13 +96,12 @@ class SurakshaCLIReport:
         'auto_theft_recovered': ['Auto_Theft_Recovered', 'Auto Theft Recovered', 'Recovered'],
 
         # 6. Serious Fraud
-        'fraud_cases': [
-            'Loss_of_Property_1_10_Crores',
-            'Loss_of_Property_10_25_Crores',
-            'Loss_of_Property_25_50_Crores',
-            'Loss_of_Property_50_100_Crores',
-            'Loss_of_Property_Above_100_Crores'
-        ],
+        'loss_1_10': ['Loss_of_Property_1_10_Crores'],
+        'loss_10_25': ['Loss_of_Property_10_25_Crores'],
+        'loss_25_50': ['Loss_of_Property_25_50_Crores'],
+        'loss_50_100': ['Loss_of_Property_50_100_Crores'],
+        'loss_above_100': ['Loss_of_Property_Above_100_Crores'],
+        
         # 7. Violent Crime Trials
         'convictions_violent': ['Convictions_in_Violent_Crimes', 'Convictions in Violent Crimes', 'Convictions',
                                 'Violent_Crime_Convictions', 'Violent Crime Convictions'],
@@ -358,10 +357,19 @@ class SurakshaCLIReport:
         lines.append(self._separator())
         lines.append("6. Serious Fraud")
         lines.append(self._separator())
-        fraud_cases = self._sum_metric('fraud', state_name, year, 'fraud_cases')
-        fraud_amt = self._sum_metric('fraud', state_name, year, 'fraud_amount')
-        lines.append(self._format_kv("Fraud Cases", f"{fraud_cases:,}"))
-        lines.append(self._format_kv("Fraud Amount", self._format_rupee(fraud_amt)))
+        loss_1_10 = self._sum_metric('fraud', state_name, year, 'loss_1_10')
+        loss_10_25 = self._sum_metric('fraud', state_name, year, 'loss_10_25')
+        loss_25_50 = self._sum_metric('fraud', state_name, year, 'loss_25_50')
+        loss_50_100 = self._sum_metric('fraud', state_name, year, 'loss_50_100')
+        loss_above_100 = self._sum_metric('fraud', state_name, year, 'loss_above_100')
+        fraud_cases = (loss_1_10 +loss_10_25 +loss_25_50 +loss_50_100 +loss_above_100)
+
+        lines.append(self._format_kv("₹1–10 Cr", f"{loss_1_10:,}"))
+        lines.append(self._format_kv("₹10–25 Cr", f"{loss_10_25:,}"))
+        lines.append(self._format_kv("₹25–50 Cr", f"{loss_25_50:,}"))
+        lines.append(self._format_kv("₹50–100 Cr", f"{loss_50_100:,}"))
+        lines.append(self._format_kv("Above ₹100 Cr", f"{loss_above_100:,}"))
+        lines.append(self._format_kv("Total Fraud Cases", f"{fraud_cases:,}"))
         lines.append("")
 
         # 7. Violent Crime Trials
