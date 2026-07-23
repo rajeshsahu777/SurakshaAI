@@ -418,17 +418,22 @@ class SurakshaAIDataProcessor:
             m['auto_theft_cases'] = 0
         
         # From fraud
-        if 'fraud' in year_data:
-            f = year_data['fraud']
-            m['fraud_cases'] = (
-                (f.get('Loss_of_Property_1_10_Crores',0) or 0) +
-                (f.get('Loss_of_Property_10_25_Crores',0) or 0) +
-                (f.get('Loss_of_Property_25_50_Crores',0) or 0) +
-                (f.get('Loss_of_Property_50_100_Crores',0) or 0) +
-                (f.get('Loss_of_Property_Above_100_Crores',0) or 0)
+        m['fraud_cases'] = 0
+
+        fraud_rows = [
+            row for row in self.datasets.get('fraud', [])
+            if row.get('state_key') == state_name.lower().replace('-', ' ').replace('_', ' ')
+            and row.get('Year') == year
+        ]
+
+        for f in fraud_rows:
+            m['fraud_cases'] += (
+                (f.get('Loss_of_Property_1_10_Crores', 0) or 0) +
+                (f.get('Loss_of_Property_10_25_Crores', 0) or 0) +
+                (f.get('Loss_of_Property_25_50_Crores', 0) or 0) +
+                (f.get('Loss_of_Property_50_100_Crores', 0) or 0) +
+                (f.get('Loss_of_Property_Above_100_Crores', 0) or 0)
             )
-        else:
-            m['fraud_cases'] = 0
         
         # From kidnapping
         if 'kidnapping' in year_data:
@@ -648,8 +653,16 @@ class SurakshaAIDataProcessor:
             # Your CSV has: Auto_Theft_Coordinated/Traced, Auto_Theft_Recovered, Auto_Theft_Stolen
             # No "Auto_Theft_Cases" column exists, so use Auto_Theft_Stolen as the case count
             property_total += year_data['auto_theft'].get('Auto_Theft_Stolen', 0) or 0
+            
         if 'fraud' in year_data:
-            property_total += year_data['fraud'].get('Fraud_Cases', 0) or 0
+            f = year_data['fraud']
+            property_total += (
+                (f.get('Loss_of_Property_1_10_Crores',0) or 0) +
+                (f.get('Loss_of_Property_10_25_Crores',0) or 0) +
+                (f.get('Loss_of_Property_25_50_Crores',0) or 0) +
+                (f.get('Loss_of_Property_50_100_Crores',0) or 0) +
+                (f.get('Loss_of_Property_Above_100_Crores',0) or 0)
+            )
         
         breakdown['categories'].append({
             'name': 'Property & Economic',
